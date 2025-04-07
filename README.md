@@ -8,7 +8,7 @@
 ---
 ## 2)	Проектирование.
    
-На данном этапе должны привлекаться опытные QA, которые могут знать особенности уже имеющейся архитектуры. Слабы места итд. Т.к. QA владеют довольно большими знаниями о проекте в целом, то они могут помочь указать на места где может быть высокая нагрузка на сервис. Может где то нелогично часто приходится ходить в разные БД для формирования простого запроса. Такие моменты могут подсветить опытные QA. Так же обсуждаются инструменты для выстраивания грамотного CI\CD. Что б QA и разработка были на одной волне.
+На данном этапе привлекаются опытные QA, которые могут знать особенности уже имеющейся архитектуры. Слабые места итд. Т.к. QA владеют довольно большими знаниями о проекте в целом, то они могут помочь указать на места где может быть высокая нагрузка на сервис. Может где то нелогично часто приходится ходить в разные БД для формирования простого запроса. Такие моменты могут подсветить опытные QA. Так же обсуждаются инструменты для выстраивания грамотного CI\CD. Что б QA и разработка были на одной волне.
 
 #### ***(Ресурсы: 2QA. Сроки: 1-1,5 недели)***
 ---
@@ -49,3 +49,113 @@
 На данном этапе происходит поддержка приложения. Происходит мониторинг действий пользователей. Сбор метрик, построение воронки. Анализ нагрузки и стабильности. Получение и разбор багов от 1-й линии поддержки и выкатка хотфиксов. Проведение регрессионного тестирования после каждого хотфикса.
 
 #### ***(Ресурсы: 1 QA. Сроки: на протяжении всего времени эксплуатации)***
+
+
+# Задание 2
+
+~~~sql
+-- Создание БД academy
+CREATE DATABASE academy;
+
+-- Добавление таблиц
+CREATE TABLE Students (
+    s_id SERIAL PRIMARY KEY,
+	name VARCHAR(100) NOT NULL,
+	start_year INTEGER NOT NULL
+);
+
+CREATE TABLE Courses (
+    c_no SERIAL PRIMARY KEY,
+	title VARCHAR(100) NOT NULL,
+	hours INTEGER NOT NULL
+);
+
+CREATE TABLE Exams (
+    s_id INTEGER NOT NULL,
+	c_no INTEGER NOT NULL,
+	score INTEGER NOT NULL,
+	FOREIGN KEY (s_id) REFERENCES Students(s_id),
+    FOREIGN KEY (c_no) REFERENCES Courses(c_no)
+);
+
+-- Добавление нескольких записей в таблицы
+INSERT INTO Students (name, start_year) VALUES ('Иван Иванов', 2020);
+INSERT INTO Students (name, start_year) VALUES ('Мария Петрова', 2019);
+INSERT INTO Students (name, start_year) VALUES ('Орк Мамонтов', 2015);
+INSERT INTO Students (name, start_year) VALUES ('Евпатий Орлов', 2018);
+INSERT INTO Students (name, start_year) VALUES ('Лютик Лютый', 2013);
+INSERT INTO Students (name, start_year) VALUES ('Лев Львович', 2012);
+INSERT INTO Students (name, start_year) VALUES ('Дир Диров', 2018);
+
+INSERT INTO Courses (title, hours) VALUES ('Математика', 60);
+INSERT INTO Courses (title, hours) VALUES ('История', 45);
+INSERT INTO Courses (title, hours) VALUES ('Физика', 50);
+INSERT INTO Courses (title, hours) VALUES ('Астрономия', 55);
+INSERT INTO Courses (title, hours) VALUES ('Русский', 70);
+INSERT INTO Courses (title, hours) VALUES ('Химия', 88);
+
+INSERT INTO Exams (s_id, c_no, score)
+SELECT s.s_id, c.c_no, FLOOR(50 + RANDOM() * 51) -- Генерирует случайное число от 50 до 100
+FROM Students s, Courses c;
+
+-- Запрос, который возвращает всех студентов, которые еще не сдали ни одного экзамена.
+SELECT s.name
+FROM Students s
+LEFT JOIN Exams e ON s.s_id = e.s_id
+WHERE e.s_id IS NULL;
+
+-- Запрос, который возвращает список студентов и количество сданных им экзаменов. Только для студентов, у которых есть сданные экзамены.
+SELECT s.name, COUNT(e.s_id) AS passed_exams_count
+FROM Students s
+JOIN Exams e ON s.s_id = e.s_id
+GROUP BY s.name
+HAVING COUNT(e.s_id) > 0;
+
+-- Вывод список курсов со средним баллом по экзамену. Список отсортирован по убыванию среднего балла.
+SELECT c.title, AVG(e.score) AS average_score
+FROM Courses c
+JOIN Exams e ON c.c_no = e.c_no
+GROUP BY c.title
+ORDER BY average_score DESC;
+
+
+-- Скрипт, который наполняет таблицы произвольными данными
+-- Функция для генерации случайных имен студентов
+CREATE OR REPLACE FUNCTION random_name() RETURNS TEXT AS $$
+DECLARE
+    names TEXT[] = ARRAY['Alice', 'Bob', 'Charlie', 'Diana', 'Eve', 'Frank', 'Grace', 'Helen', 'Ivan', 'Julia'];
+BEGIN
+    RETURN names[1 + floor(random() * array_length(names, 1))];
+END;
+$$ LANGUAGE plpgsql;
+
+-- Функция для генерации случайных названий курсов
+CREATE OR REPLACE FUNCTION random_title() RETURNS TEXT AS $$
+DECLARE
+    titles TEXT[] = ARRAY['Math', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'English', 'French', 'Spanish', 'German'];
+BEGIN
+    RETURN titles[1 + floor(random() * array_length(titles, 1))];
+END;
+$$ LANGUAGE plpgsql;
+
+-- Заполнение таблицы Students случайными данными
+INSERT INTO Students (name, start_year)
+SELECT random_name(), 2000 + floor(random() * 20)
+FROM generate_series(1, 100);
+
+-- Заполнение таблицы Courses случайными данными
+INSERT INTO Courses (title, hours)
+SELECT random_title(), 1 + floor(random() * 100)
+FROM generate_series(1, 50);
+
+-- Заполнение таблицы Exams случайными данными
+INSERT INTO Exams (s_id, c_no, score)
+SELECT s.s_id, c.c_no, 1 + floor(random() * 100)
+FROM generate_series(1, 1000) AS gs,
+     (SELECT s_id FROM Students ORDER BY random() LIMIT 100) AS s,
+     (SELECT c_no FROM Courses ORDER BY random() LIMIT 50) AS c;
+
+-- Удаление временных функций
+DROP FUNCTION random_name();
+DROP FUNCTION random_title();
+~~~
