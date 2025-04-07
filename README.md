@@ -95,7 +95,7 @@ INSERT INTO Courses (title, hours) VALUES ('Русский', 70);
 INSERT INTO Courses (title, hours) VALUES ('Химия', 88);
 
 INSERT INTO Exams (s_id, c_no, score)
-SELECT s.s_id, c.c_no, FLOOR(50 + RANDOM() * 51) -- Генерирует случайное число от 50 до 100
+SELECT s.s_id, c.c_no, FLOOR(50 + RANDOM() * 51) 
 FROM Students s, Courses c;
 
 -- Запрос, который возвращает всех студентов, которые еще не сдали ни одного экзамена.
